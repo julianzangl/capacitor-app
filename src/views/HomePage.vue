@@ -5,7 +5,6 @@
         <ion-title>Zangl tracking</ion-title>
       </ion-toolbar>
     </ion-header>
-
     <ion-content :fullscreen="true">
       <ion-modal ref="modal" trigger="open-modal" @willDismiss="onWillDismiss">
         <ion-header>
@@ -33,7 +32,7 @@
           <ion-item>
             <ion-select
               aria-label="Food"
-              placeholder="Select fruit"
+              placeholder="Select tags"
               :multiple="true"
               @ionChange="currentTags = $event.detail.value"
             >
@@ -64,17 +63,59 @@
           </ion-modal>
         </ion-content>
       </ion-modal>
-      <ion-list>
+      <ion-list v-if="!$store.state.filtered">
         <ion-item-divider>
           <ion-label>Your entries</ion-label>
+          <ion-select
+              slot="end"
+              placeholder="Select tags"
+              :multiple="true"
+              :value="filterTags"
+              @ionChange="filter($event.detail.value)"
+            >
+              <ion-select-option
+                v-for="tag in $store.state.tags"
+                :value="tag"
+                :key="tag"
+              >
+                {{ tag }}
+              </ion-select-option>
+            </ion-select>
         </ion-item-divider>
         <WorkEntry
           v-for="entry in $store.state.entries"
           :key="entry.id"
-          :href="'/entry/' + entry.id"
           :entry="entry"
         />
       </ion-list>
+      <ion-list v-else>
+        <ion-item-divider>
+          <ion-label>Your entries</ion-label>
+          <ion-select
+              slot="end"
+              placeholder="Select tags"
+              :multiple="true"
+              :value="filterTags"
+              @ionChange="filter($event.detail.value)"
+            >
+              <ion-select-option
+                v-for="tag in $store.state.tags"
+                :value="tag"
+                :key="tag"
+              >
+                {{ tag }}
+              </ion-select-option>
+            </ion-select>
+        </ion-item-divider>
+        <WorkEntry
+          v-for="entry in $store.state.filtered_entries"
+          :key="entry.id"
+          :entry="entry"
+        />
+      </ion-list>
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
       <ion-fab slot="fixed" vertical="bottom" horizontal="end">
         <ion-fab-button id="open-modal">
           <ion-icon :icon="add"></ion-icon>
@@ -106,6 +147,8 @@ import {
   IonSelect,
   IonList,
   IonItemDivider,
+  IonRefresher,
+  IonRefresherContent,
 } from "@ionic/vue";
 import { add } from "ionicons/icons";
 import { OverlayEventDetail } from "@ionic/core/components";
@@ -135,6 +178,8 @@ export default defineComponent({
     IonList,
     IonItemDivider,
     WorkEntry,
+    IonRefresher,
+    IonRefresherContent,
   },
   setup() {
     return { add };
@@ -143,6 +188,7 @@ export default defineComponent({
   data() {
     return {
       currentTags: [],
+      filterTags: [],
     };
   },
 
@@ -180,8 +226,54 @@ export default defineComponent({
     },
     onWillDismiss(ev: CustomEvent<OverlayEventDetail>) {
       if (ev.detail.role === "confirm") {
+        const time = this.generateTimeString(
+          ev.detail.data.start,
+          ev.detail.data.end
+        );
+        ev.detail.data.time = time;
         this.$store.commit("addEntry", ev.detail.data);
       }
+    },
+    handleRefresh(event: CustomEvent) {
+      setTimeout(() => {
+        this.$store.commit("resetEntries");
+        event.detail.complete();
+      }, 2000);
+    },
+    generateTimeString(start_date: string, end_date: string): string {
+      const start = new Date(start_date).getTime();
+      const end = new Date(end_date).getTime();
+      const diff = end - start;
+      const hours = Math.floor(diff / 1000 / 60 / 60);
+      const minutes = Math.floor((diff / 1000 / 60 / 60 - hours) * 60);
+      const seconds = Math.floor(
+        ((diff / 1000 / 60 / 60 - hours) * 60 - minutes) * 60
+      );
+      let time = `${hours}:${minutes}:${seconds}`;
+      time = time.replace(
+        /(\d{1,2}):(\d{1,2}):(\d{1,2})/,
+        function (match, p1, p2, p3) {
+          return (
+            (p1.length == 1 ? "0" + p1 : p1) +
+            ":" +
+            (p2.length == 1 ? "0" + p2 : p2) +
+            ":" +
+            (p3.length == 1 ? "0" + p3 : p3)
+          );
+        }
+      );
+      return time;
+    },
+    filter(data: any) {
+      console.log(data);
+      if (data.length == 0) {
+        this.filterTags = [];
+        this.$store.commit("setFiltered", false)
+        return;
+      } else {
+        this.filterTags = data;
+      }
+      this.$store.commit("filterEntriesByTags", this.filterTags);
     },
   },
 });

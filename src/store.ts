@@ -1,5 +1,14 @@
 import { createStore } from "vuex";
 
+interface Entry {
+  id: number;
+  text: string;
+  start: string;
+  end: string;
+  tags: string[];
+  time: string;
+}
+
 // Create a new store instance.
 export const store = createStore({
   state() {
@@ -7,32 +16,62 @@ export const store = createStore({
       entries: [
         {
           id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
-          text: "First Entry",
-          start: "2023-04-08T09:48:46.158Z",
+          text: "SEW ADV 2",
+          start: "2023-04-09T09:48:46.158Z",
           end: "2023-04-09T10:58:26.158Z",
-          tags: ["tag1", "tag2"],
+          tags: ["school"],
+          time: "01:09:40"
         },
         {
           id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
-          text: "Second Entry",
+          text: "Laufen",
           start: "2023-04-09T09:48:46.158Z",
           end: "2023-04-09T13:18:46.158Z",
-          tags: ["tag1", "tag2"],
+          tags: ["training"],
+          time: "03:30:00"
         },
         {
           id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
-          text: "Third Entry",
+          text: "Mittagspause",
           start: "2023-04-10T09:48:46.158Z",
           end: "2023-04-10T16:12:12.158Z",
-          tags: ["tag1", "tag2"],
+          tags: ["home", "other"],
+          time: "06:23:25"
+        },
+      ] as Entry[],
+      init_entries: [
+        {
+          id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
+          text: "SEW ADV 2",
+          start: "2023-04-09T09:48:46.158Z",
+          end: "2023-04-09T10:58:26.158Z",
+          tags: ["school"],
+          time: "01:09:40"
+        },
+        {
+          id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
+          text: "Laufen",
+          start: "2023-04-09T09:48:46.158Z",
+          end: "2023-04-09T13:18:46.158Z",
+          tags: ["training"],
+          time: "03:30:00"
+        },
+        {
+          id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
+          text: "Mittagspause",
+          start: "2023-04-10T09:48:46.158Z",
+          end: "2023-04-10T16:12:12.158Z",
+          tags: ["home", "other"],
+          time: "06:23:25"
         },
       ],
+      filtered_entries: [] as Entry[],
+      filtered: false,
       tags: [
         "work",
         "home",
         "school",
         "training",
-        "shopping",
         "other",
       ]
     };
@@ -42,5 +81,29 @@ export const store = createStore({
       state.entries.push(payload);
       console.log(state.entries);
     },
+
+    deleteEntry(state, payload) {
+      state.entries = state.entries.filter((entry) => entry.id !== payload);
+    },
+
+    updateEntry(state, payload) {
+      state.entries = state.entries.map((entry) =>
+        entry.id === payload.id ? payload : entry
+      );
+    },
+    resetEntries(state) {
+      state.entries = state.init_entries;
+    },
+
+    filterEntriesByTags(state, tags) {
+      state.filtered_entries = state.entries.filter(entry => {
+        return entry.tags.some(tag => tags.includes(tag));
+      });
+      state.filtered = true;
+    },
+
+    setFiltered(state, payload) {
+      state.filtered = payload;
+    }
   },
 });

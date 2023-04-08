@@ -13,7 +13,7 @@
             <ion-buttons slot="start">
               <ion-button @click="cancel()">Cancel</ion-button>
             </ion-buttons>
-            <ion-title>Welcome</ion-title>
+            <ion-title class="modal-title">New Entry</ion-title>
             <ion-buttons slot="end">
               <ion-button :strong="true" @click="confirm()">Confirm</ion-button>
             </ion-buttons>
@@ -21,28 +21,66 @@
         </ion-header>
         <ion-content class="ion-padding">
           <ion-item>
-            <ion-label position="stacked">Enter your name</ion-label>
+            <ion-label position="stacked"
+              >What have you been working on?</ion-label
+            >
             <ion-input
-              ref="input"
+              ref="input_text"
               type="text"
-              placeholder="Your name"
+              placeholder="Input text..."
             ></ion-input>
           </ion-item>
+          <ion-item>
+            <ion-select
+              aria-label="Food"
+              placeholder="Select fruit"
+              :multiple="true"
+              @ionChange="currentTags = $event.detail.value"
+            >
+              <ion-select-option
+                v-for="tag in $store.state.tags"
+                :value="tag"
+                :key="tag"
+              >
+                {{ tag }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Start</ion-label>
+            <ion-datetime-button
+              datetime="datetime-start"
+            ></ion-datetime-button>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">End</ion-label>
+            <ion-datetime-button datetime="datetime-end"></ion-datetime-button>
+          </ion-item>
+          <ion-modal :keep-contents-mounted="true">
+            <ion-datetime ref="datetime_start" id="datetime-start" />
+          </ion-modal>
+          <ion-modal :keep-contents-mounted="true">
+            <ion-datetime ref="datetime_end" id="datetime-end" />
+          </ion-modal>
         </ion-content>
       </ion-modal>
+      <ion-list>
+        <ion-item-divider>
+          <ion-label>Your entries</ion-label>
+        </ion-item-divider>
+        <WorkEntry
+          v-for="entry in $store.state.entries"
+          :key="entry.id"
+          :href="'/entry/' + entry.id"
+          :entry="entry"
+        />
+      </ion-list>
       <ion-fab slot="fixed" vertical="bottom" horizontal="end">
         <ion-fab-button id="open-modal">
           <ion-icon :icon="add"></ion-icon>
         </ion-fab-button>
       </ion-fab>
     </ion-content>
-
-    <ion-footer>
-      <ion-toolbar>
-        <ion-input placeholder="Enter text..."></ion-input>
-        <ion-button slot="end">Cat fact</ion-button>
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -62,11 +100,17 @@ import {
   IonInput,
   IonItem,
   IonLabel,
-  IonFooter,
+  IonDatetime,
+  IonDatetimeButton,
+  IonSelectOption,
+  IonSelect,
+  IonList,
+  IonItemDivider,
 } from "@ionic/vue";
 import { add } from "ionicons/icons";
 import { OverlayEventDetail } from "@ionic/core/components";
-import { defineComponent, ref } from "vue";
+import { defineComponent } from "vue";
+import WorkEntry from "@/components/WorkEntry.vue";
 export default defineComponent({
   name: "HomePage",
   components: {
@@ -82,25 +126,61 @@ export default defineComponent({
     IonInput,
     IonItem,
     IonLabel,
-    IonFooter,
     IonButtons,
     IonButton,
+    IonDatetime,
+    IonDatetimeButton,
+    IonSelectOption,
+    IonSelect,
+    IonList,
+    IonItemDivider,
+    WorkEntry,
   },
   setup() {
     return { add };
   },
+
+  data() {
+    return {
+      currentTags: [],
+    };
+  },
+
   methods: {
     cancel() {
-      //check the type of the ref
-      console.log(this.$refs.modal);
+      (this.$refs.modal as any).$el.dismiss(null, "cancel");
     },
     confirm() {
-      // const name = this.$refs.input.$el.value;
-      // this.$refs.modal.$el.dismiss(name, "confirm");
+      const text = (this.$refs.input_text as any).$el.value;
+      let startDateTime = document
+        .getElementById("datetime-start")
+        ?.getElementsByTagName("input")[0].value;
+      let endDateTime = document
+        .getElementById("datetime-end")
+        ?.getElementsByTagName("input")[0].value;
+
+      if (startDateTime == "") {
+        const currentDateTime = new Date();
+        const currentDateTimeString = currentDateTime.toISOString();
+        startDateTime = currentDateTimeString;
+      }
+      if (endDateTime == "") {
+        const currentDateTime = new Date();
+        const currentDateTimeString = currentDateTime.toISOString();
+        endDateTime = currentDateTimeString;
+      }
+      const data = {
+        id: Math.floor(Math.random() * Math.floor(Math.random() * Date.now())),
+        text: text,
+        start: startDateTime,
+        end: endDateTime,
+        tags: this.currentTags,
+      };
+      (this.$refs.modal as any).$el.dismiss(data, "confirm");
     },
     onWillDismiss(ev: CustomEvent<OverlayEventDetail>) {
       if (ev.detail.role === "confirm") {
-        // this.message = `Hello, ${ev.detail.data}!`;
+        this.$store.commit("addEntry", ev.detail.data);
       }
     },
   },
@@ -113,7 +193,6 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   height: 100%;
   padding: 0 16px;
 }
@@ -127,5 +206,8 @@ export default defineComponent({
   font-size: 16px;
   line-height: 22px;
   margin: 0;
+}
+.modal-title {
+  text-align: center;
 }
 </style>

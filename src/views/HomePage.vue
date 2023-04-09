@@ -3,9 +3,36 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-title>Zangl tracking</ion-title>
+        <ion-button slot="end" @click="clear_filters">
+          <ion-icon :icon="closeOutline" />
+        </ion-button>
+        <ion-select
+          slot="end"
+          placeholder="Select tags"
+          ref="filter_tags"
+          :multiple="true"
+          :value="filterTags"
+          @ionChange="filter($event.detail.value)"
+        >
+          <ion-select-option
+            v-for="tag in $store.state.tags"
+            :value="tag"
+            :key="tag"
+          >
+            {{ tag }}
+          </ion-select-option>
+        </ion-select>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
+      <ion-modal :keep-contents-mounted="true">
+        <ion-datetime
+          ref="filter_date"
+          id="datetimeFilter"
+          :value="filterTime"
+          @ionChange="filter_time($event.detail.value)"
+        ></ion-datetime>
+      </ion-modal>
       <ion-modal ref="modal" trigger="open-modal" @willDismiss="onWillDismiss">
         <ion-header>
           <ion-toolbar>
@@ -47,9 +74,9 @@
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Start</ion-label>
-            <ion-datetime-button
-              datetime="datetime-start"
-            ></ion-datetime-button>
+            <ion-datetime-button datetime="datetime-start"
+              >Yes</ion-datetime-button
+            >
           </ion-item>
           <ion-item>
             <ion-label position="stacked">End</ion-label>
@@ -66,21 +93,11 @@
       <ion-list v-if="!$store.state.filtered">
         <ion-item-divider>
           <ion-label>Your entries</ion-label>
-          <ion-select
-              slot="end"
-              placeholder="Select tags"
-              :multiple="true"
-              :value="filterTags"
-              @ionChange="filter($event.detail.value)"
-            >
-              <ion-select-option
-                v-for="tag in $store.state.tags"
-                :value="tag"
-                :key="tag"
-              >
-                {{ tag }}
-              </ion-select-option>
-            </ion-select>
+          <ion-datetime-button
+            slot="end"
+            datetime="datetimeFilter"
+            class="filter-time-button"
+          ></ion-datetime-button>
         </ion-item-divider>
         <WorkEntry
           v-for="entry in $store.state.entries"
@@ -91,21 +108,11 @@
       <ion-list v-else>
         <ion-item-divider>
           <ion-label>Your entries</ion-label>
-          <ion-select
-              slot="end"
-              placeholder="Select tags"
-              :multiple="true"
-              :value="filterTags"
-              @ionChange="filter($event.detail.value)"
-            >
-              <ion-select-option
-                v-for="tag in $store.state.tags"
-                :value="tag"
-                :key="tag"
-              >
-                {{ tag }}
-              </ion-select-option>
-            </ion-select>
+          <ion-datetime-button
+            slot="end"
+            datetime="datetimeFilter"
+            class="filter-time-button"
+          ></ion-datetime-button>
         </ion-item-divider>
         <WorkEntry
           v-for="entry in $store.state.filtered_entries"
@@ -150,7 +157,7 @@ import {
   IonRefresher,
   IonRefresherContent,
 } from "@ionic/vue";
-import { add } from "ionicons/icons";
+import { add, funnelOutline, closeOutline } from "ionicons/icons";
 import { OverlayEventDetail } from "@ionic/core/components";
 import { defineComponent } from "vue";
 import WorkEntry from "@/components/WorkEntry.vue";
@@ -182,13 +189,14 @@ export default defineComponent({
     IonRefresherContent,
   },
   setup() {
-    return { add };
+    return { add, funnelOutline, closeOutline };
   },
 
   data() {
     return {
       currentTags: [],
       filterTags: [],
+      filterTime: "",
     };
   },
 
@@ -196,6 +204,7 @@ export default defineComponent({
     cancel() {
       (this.$refs.modal as any).$el.dismiss(null, "cancel");
     },
+
     confirm() {
       const text = (this.$refs.input_text as any).$el.value;
       let startDateTime = document
@@ -224,6 +233,7 @@ export default defineComponent({
       };
       (this.$refs.modal as any).$el.dismiss(data, "confirm");
     },
+
     onWillDismiss(ev: CustomEvent<OverlayEventDetail>) {
       if (ev.detail.role === "confirm") {
         const time = this.generateTimeString(
@@ -268,12 +278,21 @@ export default defineComponent({
       console.log(data);
       if (data.length == 0) {
         this.filterTags = [];
-        this.$store.commit("setFiltered", false)
+        this.$store.commit("setFiltered", false);
         return;
       } else {
         this.filterTags = data;
       }
       this.$store.commit("filterEntriesByTags", this.filterTags);
+    },
+    filter_time(data: any) {
+      this.filterTime = data;
+      this.$store.commit("filterEntriesByDate", this.filterTime);
+    },
+
+    clear_filters() {
+      this.filterTags = [];
+      this.$store.commit("setFiltered", false);
     },
   },
 });

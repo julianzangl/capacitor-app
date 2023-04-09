@@ -1,5 +1,4 @@
 <template>
-  <!-- make a modal where the text, start and end date and the tags can be edited -->
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">

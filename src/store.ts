@@ -102,6 +102,15 @@ export const store = createStore({
       state.filtered = true;
     },
 
+    filterEntriesByDate(state, date) {
+      state.filtered_entries = state.entries.filter(entry => {
+        const entry_date = new Date(entry.start).getDate();
+        const filter_date = new Date(date).getDate();
+        return entry_date === filter_date;
+      });
+      state.filtered = true;
+    },
+
     setFiltered(state, payload) {
       state.filtered = payload;
     }

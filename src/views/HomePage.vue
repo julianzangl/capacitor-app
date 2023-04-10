@@ -275,7 +275,6 @@ export default defineComponent({
       return time;
     },
     filter(data: any) {
-      console.log(data);
       if (data.length == 0) {
         this.filterTags = [];
         this.$store.commit("setFiltered", false);

@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'capacitor.app',
+  appId: 'net.zangl.capacitorApp',
   appName: 'capacitor-app',
   webDir: 'dist',
   bundledWebRuntime: false

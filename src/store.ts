@@ -79,7 +79,6 @@ export const store = createStore({
   mutations: {
     addEntry(state, payload) {
       state.entries.push(payload);
-      console.log(state.entries);
     },
 
     deleteEntry(state, payload) {

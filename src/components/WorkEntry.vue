@@ -38,10 +38,6 @@ export default defineComponent({
     };
   },
 
-  mounted() {
-    console.log(this.entry);
-  },
-
   methods: {
     async openModal() {
       const modal = await modalController.create({
